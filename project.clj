@@ -1,9 +1,9 @@
-(defproject clojurewerkz/quartzite "2.2.0-SNAPSHOT"
+(defproject org.clojars.daniel-zamora/quartzite "2.2.1-SNAPSHOT"
   :description "Quarzite is a thin Clojure layer on top the Quartz Scheduler"
   :min-lein-version "2.5.1"
   :license {:name "Eclipse Public License"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.quartz-scheduler/quartz "2.3.1"]
+                 [org.quartz-scheduler/quartz "2.3.2"]
                  [clj-time "0.14.2"]]
   :source-paths ["src/clojure"]
   :java-source-paths ["src/java"]
