@@ -1,4 +1,4 @@
-(defproject gov.nasa.earthdata/quartzite "2.2.1-SNAPSHOT"
+(defproject gov.nasa.earthdata/quartzite "2.2.1-RC"
   :description "Quarzite is a thin Clojure layer on top the Quartz Scheduler"
   :min-lein-version "2.5.1"
   :license {:name "Eclipse Public License"}
