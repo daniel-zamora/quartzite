@@ -29,4 +29,6 @@
                  :post "clojure-quartz@googlegroups.com"}
   :plugins [[codox "0.8.10"]]
   :codox {:sources ["src/clojure"]
-          :output-dir "doc/api"})
+          :output-dir "doc/api"}
+  :deploy-repositories [["releases" :clojars]
+                        ["snapshots" :clojars]])
