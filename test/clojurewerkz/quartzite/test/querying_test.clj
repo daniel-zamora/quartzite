@@ -4,17 +4,17 @@
             [clojurewerkz.quartzite.matchers  :as matchers]
             [clojurewerkz.quartzite.triggers  :as t]
             [clojurewerkz.quartzite.schedule.calendar-interval :as calin]
-            [clojure.test :refer :all]))
+            [clojure.test :refer [deftest is]]))
 
 ;;
 ;; Group Names operations
 ;;
 
 (j/defjob NoOpJob
-  [ctx])
+  [_ctx])
 
 (j/defjob LongRunningJob
-  [ctx]
+  [_ctx]
   (Thread/sleep 5000))
 
 (defn make-no-op-job
@@ -83,7 +83,7 @@
     (let [jk (j/key job-id job-group)
           triggers (sched/get-triggers-of-job s jk)]
       (is (= 1 (count triggers)))
-      (is (.equals (first triggers) tk1)))
+      (is (= (first triggers) tk1)))
     (sched/shutdown s)))
 
 (deftest test-get-executing-jobs

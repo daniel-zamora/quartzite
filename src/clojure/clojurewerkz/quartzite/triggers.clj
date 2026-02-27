@@ -9,11 +9,9 @@
 
 (ns clojurewerkz.quartzite.triggers
   (:refer-clojure :exclude [key])
-  (:import [org.quartz Trigger TriggerBuilder TriggerKey ScheduleBuilder]
-           org.quartz.utils.Key
-           java.util.Date)
-  (:require    [clojurewerkz.quartzite.conversion :refer [to-job-data to-date]]))
-
+  (:require    [clojurewerkz.quartzite.conversion :refer [to-job-data to-date]])
+  (:import (org.quartz JobDetail JobKey Trigger TriggerBuilder TriggerKey ScheduleBuilder)
+           (org.quartz.utils Key)))
 
 ;;
 ;; Implementation
@@ -27,77 +25,79 @@
 ;; API
 ;;
 
-(defn ^TriggerKey key
-  ([]
+(defn key
+  (^TriggerKey []
      (TriggerKey. (Key/createUniqueName nil)))
-  ([named]
+  (^TriggerKey [named]
      (TriggerKey. (name named)))
-  ([named, group]
+  (^TriggerKey [named, group]
      (TriggerKey. (name named) (name group))))
 
 
 
-(defn ^TriggerBuilder with-identity
-  ([^TriggerBuilder tb s]
+(defn with-identity
+  (^TriggerBuilder [^TriggerBuilder tb s]
      (if (instance? TriggerKey s)
        (.withIdentity tb ^TriggerKey s)
        (.withIdentity tb (key s))))
-  ([^TriggerBuilder tb s group]
+  (^TriggerBuilder [^TriggerBuilder tb s group]
      (.withIdentity tb (key s group))))
 
-(defn ^TriggerBuilder with-description
-  [^TriggerBuilder tb ^String s]
+(defn with-description
+  ^TriggerBuilder [^TriggerBuilder tb ^String s]
   (.withDescription tb s))
 
 
-(defn ^TriggerBuilder with-priority
-  [^TriggerBuilder tb ^long l]
+(defn with-priority
+  ^TriggerBuilder [^TriggerBuilder tb ^long l]
   (.withPriority tb l))
 
-(defn ^TriggerBuilder modified-by-calendar
-  [^TriggerBuilder tb ^String s]
+(defn modified-by-calendar
+  ^TriggerBuilder [^TriggerBuilder tb ^String s]
   (.modifiedByCalendar tb s))
 
-(defn ^TriggerBuilder with-schedule
-  [^TriggerBuilder tb ^ScheduleBuilder sb]
+(defn with-schedule
+  ^TriggerBuilder [^TriggerBuilder tb ^ScheduleBuilder sb]
   (.withSchedule tb sb))
 
-(defn ^TriggerBuilder start-now
-  [^TriggerBuilder tb]
+(defn start-now
+  ^TriggerBuilder [^TriggerBuilder tb]
   (.startNow tb))
 
 
 ;; Seamless JodaTime integration is one
 ;; of the goals of Quartzite.
 (defn start-at
-  [^TriggerBuilder tb date]
+  ^TriggerBuilder [^TriggerBuilder tb date]
   (.startAt tb (to-date date)))
 
 (defn end-at
-  [^TriggerBuilder tb date]
+  ^TriggerBuilder [^TriggerBuilder tb date]
   (.endAt tb (to-date date)))
 
 
 
 (defn for-job
-  ([^TriggerBuilder tb job]
-     (.forJob tb job))
-  ([^TriggerBuilder tb ^String job ^String group]
+  (^TriggerBuilder [^TriggerBuilder tb job]
+   (cond (string? job) (.forJob tb ^String job)
+         (instance? JobKey job) (.forJob tb ^JobKey job)
+         :else (.forJob tb ^JobDetail job)))
+  (^TriggerBuilder [^TriggerBuilder tb ^String job ^String group]
      (.forJob tb job group)))
 
 
-(defn ^TriggerBuilder using-job-data
-  [^TriggerBuilder tb m]
+(defn using-job-data
+  ^TriggerBuilder [^TriggerBuilder tb m]
   (.usingJobData tb (to-job-data m)))
 
 
 
-(defn ^Trigger finalize
-  [^TriggerBuilder tb]
+(defn finalize
+  ^Trigger [^TriggerBuilder tb]
   (.build tb))
 
 
-(defmacro ^Trigger build
+(defmacro build
   [& body]
   `(let [tb# (TriggerBuilder/newTrigger)]
      (finalize (-> tb# ~@body))))

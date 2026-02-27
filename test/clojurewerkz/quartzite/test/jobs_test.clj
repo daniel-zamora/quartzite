@@ -1,9 +1,9 @@
 (ns clojurewerkz.quartzite.test.jobs-test
   (:refer-clojure :exclude [key])
-  (:require [clojure.test :refer :all]
-            [clojurewerkz.quartzite.jobs :refer :all]
-            [clojurewerkz.quartzite.conversion :refer :all])
-  (:import [org.quartz JobDataMap]))
+  (:require [clojure.test :refer [deftest is]]
+            [clojurewerkz.quartzite.jobs :as jobs]
+            [clojurewerkz.quartzite.conversion :refer [from-job-data to-job-data]])
+  (:import (org.quartz Job JobDataMap)))
 
 
 ;;
@@ -11,12 +11,12 @@
 ;;
 
 (deftest test-instantiation-of-keys
-  (is (not (= (key) (key))))
-  (is (not (= (key "key1") (key))))
-  (is (not (= (key "key1") (key "key2"))))
-  (is (not (= (key "key1" "group1") (key "key1" "group2"))))
-  (is (= (key "key1" "group1") (key "key1" "group1")))
-  (is (= (key "key1") (key "key1"))))
+  (is (not (= (jobs/key) (jobs/key))))
+  (is (not (= (jobs/key "key1") (jobs/key))))
+  (is (not (= (jobs/key "key1") (jobs/key "key2"))))
+  (is (not (= (jobs/key "key1" "group1") (jobs/key "key1" "group2"))))
+  (is (= (jobs/key "key1" "group1") (jobs/key "key1" "group1")))
+  (is (= (jobs/key "key1") (jobs/key "key1"))))
 
 
 
@@ -25,51 +25,51 @@
 ;;
 
 (defrecord AJob []
-  org.quartz.Job
-  (execute [this ctx]
+  Job
+  (execute [_this _ctx]
     ;; intentional no-op
     ))
 
 (deftest test-job-builder-dsl-example1
-  (let [job (build (with-identity    "basic.job1" "basic.group1")
-                   (with-description "A description")
-                   (of-type AJob))]
-    (is (= (key "basic.job1" "basic.group1") (.getKey job)))))
+  (let [job (jobs/build (jobs/with-identity    "basic.job1" "basic.group1")
+                        (jobs/with-description "A description")
+                        (jobs/of-type AJob))]
+    (is (= (jobs/key "basic.job1" "basic.group1") (.getKey job)))))
 
 
 (deftest test-job-builder-dsl-example2
-  (let [job (build (with-identity    "basic.job2" "basic.group2")
-                   (with-description "A description")
-                   (of-type AJob))]
+  (let [job (jobs/build (jobs/with-identity    "basic.job2" "basic.group2")
+                        (jobs/with-description "A description")
+                        (jobs/of-type AJob))]
     (is (= "A description" (.getDescription job)))))
 
 
 (deftest test-job-builder-dsl-example3
-  (let [job (build (with-identity    "basic.job3" "basic.group3")
-                   (with-description "A description")
-                   (of-type AJob))]
-   (.getJobClass job)))
+  (let [job (jobs/build (jobs/with-identity    "basic.job3" "basic.group3")
+                        (jobs/with-description "A description")
+                        (jobs/of-type AJob))]
+    (.getJobClass job)))
 
 (deftest test-job-builder-dsl-example4
-  (let [job (build (with-identity    "basic.job4" "basic.group4")
-                   (store-durably)
-                   (of-type AJob)
-                   (request-recovery))]
+  (let [job (jobs/build (jobs/with-identity    "basic.job4" "basic.group4")
+                        (jobs/store-durably)
+                        (jobs/request-recovery)
+                        (jobs/of-type AJob))]
     (is (.requestsRecovery job))
     (is (.isDurable job))))
 
 (deftest test-job-builder-dsl-example5
-  (let [jk  (key "basic.job5" "basic.group5")
-        job (build (with-identity jk)
-                    (of-type AJob)
-                   (store-durably))]
+  (let [jk  (jobs/key "basic.job5" "basic.group5")
+        job (jobs/build (jobs/with-identity jk)
+                        (jobs/of-type AJob)
+                        (jobs/store-durably))]
     (is (= jk (.getKey job)))))
 
 (deftest test-job-builder-dsl-example6
-  (let [jk  (key "basic.job6")
-        job (build (with-identity jk)
-                   (of-type AJob)
-                   (store-durably))]
+  (let [jk  (jobs/key "basic.job6")
+        job (jobs/build (jobs/with-identity jk)
+                        (jobs/of-type AJob)
+                        (jobs/store-durably))]
     (is (= jk (.getKey job)))))
 
 

@@ -8,32 +8,33 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns clojurewerkz.quartzite.scheduler
-  (:import [org.quartz Scheduler JobDetail JobKey Trigger TriggerKey SchedulerListener ListenerManager JobExecutionContext]
-           org.quartz.impl.matchers.GroupMatcher
-           java.util.List)
   (:require [clojurewerkz.quartzite.jobs :as j]
             [clojurewerkz.quartzite.triggers :as t]
-            [clojurewerkz.quartzite.conversion :refer :all]))
+            [clojurewerkz.quartzite.conversion :refer [to-job-key]])
+  (:import (java.util Date List)
+           (org.quartz Scheduler JobDetail JobKey Trigger TriggerKey SchedulerListener ListenerManager JobExecutionContext)
+           (org.quartz.impl.matchers GroupMatcher)
+           (org.quartz.impl StdSchedulerFactory)))
 
 ;;
 ;; API
 ;;
 
-(defn ^Scheduler initialize
+(defn initialize
   "Initializes a scheduler."
-  []
-  (org.quartz.impl.StdSchedulerFactory/getDefaultScheduler))
+  ^Scheduler []
+  (StdSchedulerFactory/getDefaultScheduler))
 
-(defn ^Scheduler start
+(defn start
   "Starts Quartzite's scheduler. Newly initialized scheduler is not active (in standby mode),
    this function starts it"
-  [^Scheduler scheduler]
+  ^Scheduler [^Scheduler scheduler]
   (doto scheduler
     .start))
 
-(defn ^Scheduler start-delayed
+(defn start-delayed
   "Starts Quartzite's scheduler after a delay in seconds"
-  [^Scheduler scheduler ^long seconds]
+  ^Scheduler [^Scheduler scheduler ^long seconds]
   (doto scheduler
     (.startDelayed seconds)))
 
@@ -68,7 +69,7 @@
 (defn schedule
   "Adds given job to the scheduler and associates it with given trigger.
    Trigger controls job execution schedule, initial execution time and other characteristics"
-  [^Scheduler scheduler ^JobDetail job-detail ^Trigger trigger]
+  ^Date [^Scheduler scheduler ^JobDetail job-detail ^Trigger trigger]
   (.scheduleJob ^Scheduler scheduler job-detail trigger))
 
 (defn add-job
@@ -81,7 +82,7 @@
 
 (defn add-trigger
   "Adds given trigger to the scheduled job with which the trigger has been associated"
-  [^Scheduler scheduler ^Trigger trigger]
+  ^Date [^Scheduler scheduler ^Trigger trigger]
   (.scheduleJob ^Scheduler scheduler trigger))
 
 
@@ -177,16 +178,16 @@
 
 (defn get-trigger
   "Returns a Trigger instance for the given key."
-  ([^Scheduler scheduler key]
+  (^Trigger [^Scheduler scheduler key]
      (.getTrigger ^Scheduler scheduler key))
-  ([^Scheduler scheduler ^String group ^String key]
+  (^Trigger [^Scheduler scheduler ^String group ^String key]
      (.getTrigger ^Scheduler scheduler (t/key key group))))
 
 (defn get-job
   "Returns a JobDetail instance for the given key."
-  ([^Scheduler scheduler key]
+  (^JobDetail [^Scheduler scheduler key]
      (.getJobDetail ^Scheduler scheduler (to-job-key key)))
-  ([^Scheduler scheduler ^String group ^String key]
+  (^JobDetail [^Scheduler scheduler ^String group ^String key]
      (.getJobDetail ^Scheduler scheduler (j/key key group))))
 
 (defn get-triggers-of-job
@@ -210,7 +211,7 @@
 (defn get-currently-executing-jobs
   "Returns a set of JobExecutionContext that represent the currently executing jobs for a given key"
   [^Scheduler scheduler key]
-  (filter #(= (.. ^JobExecutionContext % getJobDetail getKey) (j/key key))
+  (filter #(= (.getKey (.getJobDetail ^JobExecutionContext %)) (j/key key))
           (.getCurrentlyExecutingJobs ^Scheduler scheduler)))
 
 (defn currently-executing-job?
@@ -249,7 +250,9 @@
 (defn scheduled?
   "Checks if entity with given key already exists within the scheduler"
   [^Scheduler scheduler key]
-  (.checkExists ^Scheduler scheduler key))
+  (if (instance? JobKey key)
+    (.checkExists scheduler ^JobKey key)
+    (.checkExists scheduler ^TriggerKey key)))
 
 (defn all-scheduled?
   "Returns true if all provided keys (trigger or job) are scheduled"

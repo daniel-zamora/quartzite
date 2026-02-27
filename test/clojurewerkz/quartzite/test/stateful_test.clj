@@ -1,19 +1,15 @@
 (ns clojurewerkz.quartzite.test.stateful-test
-  (:refer-clojure :exclude [await])
   (:require [clojurewerkz.quartzite.scheduler :as sched]
             [clojurewerkz.quartzite.jobs      :as j]
             [clojurewerkz.quartzite.triggers  :as t]
             [clojurewerkz.quartzite.matchers  :as m]
             [clojurewerkz.quartzite.stateful  :as stateful]
             [clojurewerkz.quartzite.schedule.simple :as s]
-            [clojurewerkz.quartzite.schedule.calendar-interval :as calin]
-            [clojure.test :refer :all]
-            [clojurewerkz.quartzite.conversion :refer :all]
-            [clj-time.core :refer [now from-now]])
-  (:import [java.util.concurrent CountDownLatch TimeUnit]
-           org.quartz.impl.matchers.GroupMatcher))
+            [clojure.test :refer [deftest is]]
+            [clojurewerkz.quartzite.conversion :refer [from-trigger]])
+  (:import (java.util.concurrent CountDownLatch TimeUnit)))
 
-(defn ^:private await
+(defn ^:private await-latch
   [^CountDownLatch latch]
   (.await latch 3 TimeUnit/SECONDS))
 
@@ -25,7 +21,7 @@
 
 ; job takes longer than interval
 (stateful/def-stateful-job JobA
-  [ctx]
+  [_ctx]
   (Thread/sleep 1000)
   (.countDown ^CountDownLatch latch1))
 
@@ -46,8 +42,8 @@
         start (System/currentTimeMillis)]
     (sched/schedule s job trigger)
     (is (sched/all-scheduled? s jk tk))
-    (is (not (empty? (sched/get-triggers s [tk]))))
-    (is (not (empty? (sched/get-jobs s [jk]))))
+    (is (seq (sched/get-triggers s [tk])))
+    (is (seq (sched/get-jobs s [jk])))
     (let [t (sched/get-trigger s tk)
           m (from-trigger t)]
       (is t)
@@ -56,8 +52,8 @@
       (is (:start-time m))
       (is (:next-fire-time m)))
     (is (sched/get-job s jk))
-    (is (not (empty? (sched/get-job-keys s (m/group-equals "tests")))))
-    (await latch1)
+    (is (seq (sched/get-job-keys s (m/group-equals "tests"))))
+    (await-latch latch1)
     (let [time-to-run (- (System/currentTimeMillis) start)]
       (is (>= time-to-run 2000)))
     (sched/shutdown s)))
@@ -80,8 +76,6 @@
 
 (deftest test-stateful-job-state
   (let [s       (-> (sched/initialize) sched/start)
-        jk      (j/key "clojurewerkz.quartzite.test.execution.job2"     "tests")
-        tk      (t/key "clojurewerkz.quartzite.test.execution.trigger2" "tests")
         job     (j/build
                  (j/of-type JobB)
                  (j/with-identity "clojurewerkz.quartzite.test.execution.job2" "tests"))
@@ -91,9 +85,8 @@
                   (t/with-description "just a trigger")
                   (t/with-schedule (s/schedule
                                     (s/with-repeat-count 10)
-                                    (s/with-interval-in-milliseconds 10))))
-        start (System/currentTimeMillis)]
+                                    (s/with-interval-in-milliseconds 10))))]
     (sched/schedule s job trigger)
-    (is (not (empty? (sched/get-job-keys s (m/group-equals "tests")))))
-    (await latch2)
+    (is (seq (sched/get-job-keys s (m/group-equals "tests"))))
+    (await-latch latch2)
     (is (= @atom1 10))))

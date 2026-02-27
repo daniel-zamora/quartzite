@@ -1,0 +1,8 @@
+{:lint-as {clojurewerkz.quartzite.jobs/defjob clojure.core/defn
+           clojurewerkz.quartzite.stateful/def-stateful-job clojure.core/defn}
+ :hooks   {:analyze-call {
+
+
+                          clojurewerkz.quartzite.jobs/build clj-kondo.clojurewerkz.quartzite/jobs-build
+                          clojurewerkz.quartzite.triggers/build clj-kondo.clojurewerkz.quartzite/triggers-build
+                          }}}

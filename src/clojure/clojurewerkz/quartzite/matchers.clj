@@ -10,8 +10,8 @@
 (ns clojurewerkz.quartzite.matchers
   "Contains factory functions that produce group matchers.
    Group matchers are used to retrieve triggers and jobs from the scheduler en masse."
-  (:import org.quartz.impl.matchers.GroupMatcher
-           org.quartz.utils.Key))
+  (:import (org.quartz.impl.matchers GroupMatcher)
+           (org.quartz.utils Key)))
 
 
 ;;
@@ -23,26 +23,22 @@
   [^GroupMatcher matcher ^Key key]
   (.isMatch matcher key))
 
-(defn ^org.quartz.impl.matchers.GroupMatcher
-  group-equals
+(defn group-equals
   "Returns a group matcher that matches keys in the given group"
-  [^String s]
+  ^GroupMatcher [^String s]
   (GroupMatcher/groupEquals s))
 
-(defn ^org.quartz.impl.matchers.GroupMatcher
-  group-starts-with
+(defn group-starts-with
   "Returns a group matcher that matches keys in all groups that start with the given prefix"
-  [^String s]
+  ^GroupMatcher [^String s]
   (GroupMatcher/groupStartsWith s))
 
-(defn ^org.quartz.impl.matchers.GroupMatcher
-  group-ends-with
+(defn group-ends-with
   "Returns a group matcher that matches keys in all groups that end with the given suffix"
-  [^String s]
+  ^GroupMatcher [^String s]
   (GroupMatcher/groupEndsWith s))
 
-(defn ^org.quartz.impl.matchers.GroupMatcher
-  group-contains
+(defn group-contains
   "Returns a group matcher that matches keys in all groups that contain the given substring"
-  [^String s]
+  ^GroupMatcher [^String s]
   (GroupMatcher/groupContains s))

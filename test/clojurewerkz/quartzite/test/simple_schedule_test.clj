@@ -3,14 +3,14 @@
             [clojurewerkz.quartzite.jobs      :as j]
             [clojurewerkz.quartzite.triggers  :as t]
             [clojurewerkz.quartzite.schedule.calendar-interval :as calin]
-            [clojure.test :refer :all]))
+            [clojure.test :refer [deftest is]]))
 
 ;;
 ;; Group Names operations
 ;;
 
 (j/defjob NoOpJob
-  [ctx])
+  [_ctx])
 
 (defn make-durable-no-op-job
   [name job-group]
@@ -38,8 +38,8 @@
 
     (sched/add-job s job1)
 
-    (is (.equals (sched/get-job s jk) job1))
-    (is (.equals job1 (sched/get-job s job-group job-id)))
+    (is (= (sched/get-job s jk) job1))
+    (is (= job1 (sched/get-job s job-group job-id)))
     (is (zero? (count (sched/get-triggers-of-job s jk))))
     (sched/shutdown s)))
 
@@ -63,5 +63,5 @@
 
       (let [triggers (sched/get-triggers-of-job s jk)]
         (is (= 1 (count triggers)))
-        (is (.equals (first triggers) trig1)))
+        (is (= (first triggers) trig1)))
       (sched/shutdown s))))

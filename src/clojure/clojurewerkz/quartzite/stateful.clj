@@ -8,22 +8,23 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns clojurewerkz.quartzite.stateful
-  (:import [org.quartz JobExecutionContext])
-  (:require [clojurewerkz.quartzite.conversion :as conv]))
+  (:require [clojurewerkz.quartzite.conversion :as conv])
+  (:import (org.quartz JobExecutionContext StatefulJob)))
 
 (defmacro def-stateful-job
   "Just like clojurewerkz.quartzite.jobs/defjob but defines a stateful job"
   [jtype args & body]
   `(defrecord ~jtype []
-     org.quartz.StatefulJob
+     StatefulJob
      (execute [this ~@args]
        ~@body)))
 
 (defn replace!
   "Replaces the job data of the current context execution for the map m, so it will be persisted. Returns m."
   [^JobExecutionContext ctx m]
-  (.. ctx getJobDetail getJobDataMap clear)
-  (.. ctx getJobDetail getJobDataMap (putAll m))
+  (let [jdm (.getJobDataMap (.getJobDetail ctx))]
+    (.clear jdm)
+    (.putAll jdm m))
   m)
 
 (defn get-job-detail-data

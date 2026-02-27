@@ -1,6 +1,6 @@
-(ns clojurewerkz.quartzite.test.stateful-test
-  (:require [clojure.test :refer :all]
-            [clojurewerkz.quartzite.conversion :refer :all]))
+(ns clojurewerkz.quartzite.test.conversion-test
+  (:require [clojure.test :refer [are deftest]]
+            [clojurewerkz.quartzite.conversion :refer [from-job-data to-job-data]]))
 
 (defrecord Abc [a b c])
 

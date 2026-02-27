@@ -9,11 +9,11 @@
 
 (ns clojurewerkz.quartzite.conversion
   (:refer-clojure :exclude [key])
-  (:import [org.quartz JobDataMap JobExecutionContext]
-           org.quartz.utils.Key
-           [org.quartz TriggerKey JobKey]
-           clojure.lang.IPersistentMap
-           [org.quartz JobDetail Trigger]))
+  (:import (clojure.lang IPersistentMap)
+           (java.time Instant LocalDate LocalDateTime OffsetDateTime ZoneId ZonedDateTime)
+           (java.util Calendar Date)
+           (org.quartz JobDataMap JobExecutionContext JobDetail Trigger TriggerKey JobKey)
+           (org.quartz.utils Key)))
 
 ;;
 ;; Implementation
@@ -34,13 +34,13 @@
 
 ;; Monger and other ClojureWerkz project integration extension point. MK.
 (defprotocol JobDataMapConversion
-  (^org.quartz.JobDataMap
+  (^JobDataMap
     to-job-data   [input] "Instantiates a JobDataMap instance from a Clojure map")
   (from-job-data [input] "Converts a JobDataMap to a Clojure map"))
 
 (extend-protocol JobDataMapConversion
   IPersistentMap
-  (to-job-data [^clojure.lang.IPersistentMap input]
+  (to-job-data [^IPersistentMap input]
     (JobDataMap. (convert-keys-to-strings input)))
 
 
@@ -81,36 +81,67 @@
   (to-date [input] "Converts given input to java.util.Date"))
 
 (extend-protocol DateConversion
-  java.util.Date
+  Date
   (to-date [input]
     input)
 
-  ;; common cases
-  org.joda.time.DateTime
-  (to-date [input]
-    (.toDate input))
-  org.joda.time.MutableDateTime
-  (to-date [input]
-    (.toDate input))
+  Calendar
+  (to-date [^Calendar input]
+    (.getTime input))
 
-  ;; catch-all for Joda Date types convertable to java.util.Date
-  org.joda.time.base.BaseDateTime
-  (to-date [input]
-    (.toDate input)))
+  Instant
+  (to-date [^Instant input]
+    (Date/from input))
 
+  OffsetDateTime
+  (to-date [^OffsetDateTime input]
+    (Date/from (.toInstant input)))
+
+  ZonedDateTime
+  (to-date [^ZonedDateTime input]
+    (Date/from (.toInstant input)))
+
+  LocalDateTime
+  (to-date [^LocalDateTime input]
+    (Date/from (.toInstant ^ZonedDateTime (.atZone input ZoneId/systemDefault))))
+
+  LocalDate
+  (to-date [^LocalDate input]
+    (Date/from (.toInstant ^ZonedDateTime (.atStartOfDay input ZoneId/systemDefault)))))
+
+;; Dynamically load Joda time support if possible
+(defn class-exists? [sym]
+  (try
+    (boolean (resolve sym))
+    (catch Throwable _ false)))
+
+(when (every? class-exists? ['org.joda.time.DateTime
+                             'org.joda.time.MutableDateTime
+                             'org.joda.time.base.BaseDateTime])
+  (eval
+   `(extend-protocol DateConversion
+      org.joda.time.DateTime
+      (to-date [^org.joda.time.DateTime input#]
+        (.toDate input#))
+      org.joda.time.MutableDateTime
+      (to-date [^org.joda.time.MutableDateTime input#]
+        (.toDate input#))
+      org.joda.time.base.BaseDateTime
+      (to-date [^org.joda.time.base.BaseDateTime input#]
+        (.toDate input#)))))
 
 (defprotocol KeyCoercion
-  (^org.quartz.TriggerKey
+  (^TriggerKey
     to-trigger-key [input] "Converts a key to a TriggerKey instance")
-  (^org.quartz.JobKey
+  (^JobKey
     to-job-key [input] "Converts a key to a JobKey instance"))
 
 (extend-protocol KeyCoercion
-  org.quartz.TriggerKey
+  TriggerKey
   (to-trigger-key [input]
     input)
 
-  org.quartz.JobKey
+  JobKey
   (to-job-key [input]
     input)
 

@@ -9,9 +9,8 @@
 
 (ns clojurewerkz.quartzite.jobs
   (:refer-clojure :exclude [key])
-  (:import [org.quartz Job JobDetail JobBuilder JobKey JobExecutionContext JobDataMap]
-           [org.quartz.utils Key]
-           [clojure.lang IPersistentMap])
+  (:import (org.quartz Job JobDetail JobBuilder JobKey)
+           (org.quartz.utils Key))
   (:require    [clojurewerkz.quartzite.conversion :refer [to-job-data]]))
 
 
@@ -27,50 +26,50 @@
 ;; API
 ;;
 
-(defn ^JobKey key
-  ([]
+(defn key
+  (^JobKey []
      (JobKey. (Key/createUniqueName nil)))
-  ([named]
+  (^JobKey [named]
      (JobKey. (name named)))
-  ([named, group]
+  (^JobKey [named, group]
      (JobKey. (name named) (name group))))
 
 
 
-(defn ^JobBuilder with-identity
-  ([^JobBuilder jb s]
+(defn with-identity
+  (^JobBuilder [^JobBuilder jb s]
      (if (instance? JobKey s)
        (.withIdentity jb ^JobKey s)
        (.withIdentity jb (key s))))
-  ([^JobBuilder jb s group]
+  (^JobBuilder [^JobBuilder jb s group]
      (.withIdentity jb (key s group))))
 
-(defn ^JobBuilder with-description
-  [^JobBuilder jb ^String s]
+(defn with-description
+  ^JobBuilder [^JobBuilder jb ^String s]
   (.withDescription jb s))
 
-(defn ^JobBuilder store-durably
-  [^JobBuilder jb]
+(defn store-durably
+  ^JobBuilder [^JobBuilder jb]
   (.storeDurably jb))
 
-(defn ^JobBuilder request-recovery
-  [^JobBuilder jb]
+(defn request-recovery
+  ^JobBuilder [^JobBuilder jb]
   (.requestRecovery jb))
 
-(defn ^JobBuilder of-type
-  [^JobBuilder jb clazz]
+(defn of-type
+  ^JobBuilder [^JobBuilder jb clazz]
   (.ofType jb clazz))
 
-(defn ^JobBuilder using-job-data
-  [^JobBuilder tb m]
+(defn using-job-data
+  ^JobBuilder [^JobBuilder tb m]
   (.usingJobData tb (to-job-data m)))
 
-(defn ^JobDetail finalize
-  [^JobBuilder jb]
+(defn finalize
+  ^JobDetail [^JobBuilder jb]
   (.build jb))
 
 
-(defmacro ^JobDetail build
+(defmacro build
   [& body]
   `(let [jb# (JobBuilder/newJob)]
      (finalize (-> jb# ~@body))))
@@ -81,6 +80,6 @@
 (defmacro defjob
   [jtype args & body]
   `(defrecord ~jtype []
-       org.quartz.Job
+       Job
      (execute [this ~@args]
        ~@body)))
